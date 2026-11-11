@@ -125,30 +125,30 @@ public class UserDao {
         return userList;
     }
 
-public List<user> getPendingUser(){
+    public List<user> getPendingUser(){
         List<user> pendingList = new ArrayList<>();
         String sql = "SELECT * FROM users WHERE status = 'PENDING'";
 
-            try(Connection conn = DatabaseConnection.getConnection()) {
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(sql);
+        try(Connection conn = DatabaseConnection.getConnection()) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
 
-                while(rs.next()){
-                    pendingList.add(new user(
-                            rs.getInt("id"),
-                            rs.getString("username"),
-                            rs.getString("password"),
-                            rs.getString("roles"),
-                            rs.getString("status")
-                    ));
-                }
-            } catch (SQLException e) {
-                System.err.println("Error fetching users: "+e.getMessage());
+            while(rs.next()){
+                pendingList.add(new user(
+                        rs.getInt("id"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getString("roles"),
+                        rs.getString("status")
+                ));
             }
-            return pendingList;
-}
+        } catch (SQLException e) {
+            System.err.println("Error fetching users: "+e.getMessage());
+        }
+        return pendingList;
+    }
 
-public boolean approveUser(int userId){
+    public boolean approveUser(int userId){
         String sql = "UPDATE users SET status ='APPROVED' WHERE id = ?";
 
         try(Connection conn = DatabaseConnection.getConnection();
@@ -174,8 +174,8 @@ public boolean approveUser(int userId){
 
         String sql = "UPDATE users SET roles = ?, status = ? WHERE id = ?";
         try (
-            Connection conn = DatabaseConnection.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)){
+                Connection conn = DatabaseConnection.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)){
 
             pstmt.setString(1, newRoles.toUpperCase());
             pstmt.setString(2, newStatus.toUpperCase());
@@ -195,4 +195,4 @@ public boolean approveUser(int userId){
         return false;
     }
 
-    }
+}

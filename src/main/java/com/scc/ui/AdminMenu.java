@@ -1,6 +1,5 @@
 package com.scc.ui;
 
-import com.scc.dao.ActivityLogDao; // Added for Deliverable 8
 import com.scc.dao.UserDao;
 import com.scc.model.user;
 import java.util.List;
@@ -8,12 +7,10 @@ import java.util.Scanner;
 
 public class AdminMenu {
     private final UserDao userDao;
-    private final ActivityLogDao logDao; // Added for Deliverable 8
     private final Scanner scanner;
 
     public AdminMenu(UserDao userDao, Scanner scanner) {
         this.userDao = userDao;
-        this.logDao = new ActivityLogDao(); // Initialized ActivityLogDao
         this.scanner = scanner;
     }
 
@@ -27,7 +24,7 @@ public class AdminMenu {
             System.out.println("2. View Pending Users Approvals");
             System.out.println("3. Approve Users Registration");
             System.out.println("4. Update Users Role / Status");
-            System.out.println("5. View System Audit Logs"); // Updated from (Reserved)
+            System.out.println("5. (Reserved)");
             System.out.println("6. (Reserved)");
             System.out.println("7. Logout");
             System.out.print("Choose an Option (1-7): ");
@@ -37,9 +34,8 @@ public class AdminMenu {
             switch (choice) {
                 case "1" -> viewAllUser();
                 case "2" -> viewPendingUsers();
-                case "3" -> approveUser(admin); // Pass admin to log action
+                case "3" -> approveUser();
                 case "4" -> updateUser(admin);
-                case "5" -> viewSystemAuditLogs(); // Added audit log view option
                 case "7" -> {
                     System.out.println("-> Logging out...");
                     loggedIn = false;
@@ -76,7 +72,7 @@ public class AdminMenu {
         displayUserTable(userDao.getPendingUser(), "PENDING USERS APPROVALS");
     }
 
-    private void approveUser(user currentAdmin) {
+    private void approveUser() {
         List<user> pendingUser = userDao.getPendingUser();
         displayUserTable(pendingUser, "PENDING APPROVALS");
 
@@ -102,13 +98,6 @@ public class AdminMenu {
         }
 
         userDao.approveUser(userId);
-
-        logDao.logAction(
-                currentAdmin.id(),
-                "USER_APPROVED",
-                "Admin [" + currentAdmin.id() + "] approved account for User ID " + userId
-        );
-
         System.out.println("-> User successfully approved!");
     }
 
@@ -155,61 +144,7 @@ public class AdminMenu {
         }
 
         userDao.UpdateUserAndStatus(userId, newRole, newStatus);
-
-        logDao.logAction(
-                currentAdmin.id(),
-                "USER_UPDATED",
-                "Admin [" + currentAdmin.id() + "] changed role/status of User ID " + userId + " to Role: " + newRole + ", Status: " + newStatus
-        );
-
         System.out.println("-> User successfully updated!");
-    }
-
-    private void viewSystemAuditLogs() {
-        while (true) {
-            System.out.println("\n=== SYSTEM AUDIT LOGS MENU ===");
-            System.out.println("1. View All System Logs");
-            System.out.println("2. Filter Logs by User ID");
-            System.out.println("3. Back to Admin Dashboard");
-            System.out.print("Choose an Option (1-3): ");
-
-            String choice = scanner.nextLine().trim();
-            switch (choice) {
-                case "1" -> printLogs(logDao.getAllLogs());
-                case "2" -> {
-                    int targetUserId = readIntInput("Enter User ID to filter: ");
-                    printLogs(logDao.getLogsByUserId(targetUserId));
-                }
-                case "3" -> {
-                    return;
-                }
-                default -> System.out.println("-> [ERROR] Invalid Option. Please choose 1, 2, or 3.");
-            }
-        }
-    }
-
-    private void printLogs(List<String[]> logs) {
-        if (logs.isEmpty()) {
-            System.out.println("-> No activity logs found.");
-            return;
-        }
-
-        System.out.println("\n" + "=".repeat(105));
-        // Strict format required: (%-5s | %-8s | %-18s | %-35s | %-20s)
-        System.out.printf("%-5s | %-8s | %-18s | %-35s | %-20s%n",
-                "ID", "User ID", "Action Type", "Description", "Timestamp");
-        System.out.println("=".repeat(105));
-
-        for (String[] log : logs) {
-            System.out.printf("%-5s | %-8s | %-18s | %-35s | %-20s%n",
-                    log[0], log[1], log[2], truncate(log[3], 35), log[4]);
-        }
-        System.out.println("=".repeat(105));
-    }
-
-    private String truncate(String value, int maxLen) {
-        if (value == null) return "";
-        return value.length() > maxLen ? value.substring(0, maxLen - 3) + "..." : value;
     }
 
     private String readValidRole() {
