@@ -1,9 +1,8 @@
 package com.scc.model;
 
-public record user(int id, String username, String password, String roles, String status) {
+public record user(int id, String username, String password, String roles, String status, String fullName) {
     @Override
     public String toString() {
-        return String.format("[%d] %s (%s) - status: %s", id, username, roles, status);
+        return String.format("[%d] %s (%s) - Name: %s - Status: %s", id, username, roles, fullName, status);
     }
 }
-

@@ -1,83 +1,76 @@
 package com.scc.ui;
 
+import com.scc.dao.ActivityLogDao;
 import com.scc.dao.UserDao;
 import com.scc.model.user;
 import java.util.Scanner;
 
 public class Authentication {
+    private final UserDao userDao = new UserDao();
+    private final ActivityLogDao logDao = new ActivityLogDao();
+    private final Scanner scanner = new Scanner(System.in);
 
-    private final UserDao userDao;
-    private final Scanner sc;
+    public void showAuthMenu() {
+        while (true) {
+            System.out.println("\n=== BARANGAY MANAGEMENT SYSTEM ===");
+            System.out.println("1. Login");
+            System.out.println("2. Register");
+            System.out.println("3. Exit");
+            System.out.print("Choose an option: ");
 
-    public Authentication(UserDao userDao, Scanner sc){
-        this.userDao = userDao;
-        this.sc =sc;
-
-    }
-
-    public void  start(){
-
-        System.out.println("\n================================");
-        System.out.println("STUDENT RECORDS MANAGEMENT");
-        System.out.println("\n================================");
-        System.out.println("1. LOGIN");
-        System.out.println("2. REGISTER");
-        System.out.println("3. EXIT");
-        System.out.print(" Choose an option: ");
-        String choice = sc.nextLine();
-
-        switch (choice){
-            case "1":
-                handleLogin();
-                break;
-            case "2":
-                System.out.print("Enter New Username: ");
-                String user = sc.nextLine();
-                System.out.print("Enter Password: ");
-                String pass = sc.nextLine();
-
-                System.out.print("Select Role [1] teacher [2] admin: ");
-                int rolechoice = sc.nextInt();
-                String role;
-                switch (rolechoice){
-                    case 1:
-                        role = "teacher";
-                        break;
-                    case 2:
-                        role = "admin";
-                        break;
-                    default:
-                        role = null;
-
+            String choice = scanner.nextLine().trim();
+            switch (choice) {
+                case "1" -> handleLogin();
+                case "2" -> handleRegister();
+                case "3" -> {
+                    System.out.println("Exiting system. Goodbye!");
+                    return;
                 }
-
-                if(role != null){
-                    userDao.registerUser(user, pass, role);
-
-                }else {
-
-                    System.out.println("Invalid role selection ");
-                }
-
-                break;
-        }
-    }
-
-    private void handleLogin(){
-        System.out.print("Enter username: ");
-        String username = sc.nextLine();
-        System.out.print("Enter Password: ");
-        String password = sc.nextLine();
-
-        user user = userDao.login(username, password);
-
-        if(user != null){
-            System.out.println("\n -> Welcome "+user.username()+"| ROLE: "+user.roles()+"");
-            switch (user.roles()){
-                case "ADMIN" -> new AdminMenu(userDao, sc).display(user);
-                default -> System.out.println("Account roles not found!");
+                default -> System.out.println("Invalid option. Try again.");
             }
         }
     }
 
+    private void handleLogin() {
+        System.out.print("Username: ");
+        String username = scanner.nextLine().trim();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+
+        user loggedInUser = userDao.authenticate(username, password);
+        if (loggedInUser != null) {
+            // Using fullName() instead of username() for greeting
+            System.out.println("Welcome, " + loggedInUser.fullName() + "!");
+            logDao.logActivity(loggedInUser.id(), "User logged in");
+            routeByRole(loggedInUser);
+        } else {
+            System.out.println("Invalid username, password, or inactive account.");
+        }
+    }
+
+    private void handleRegister() {
+        System.out.print("Full Name: ");
+        String fullName = scanner.nextLine().trim();
+        System.out.print("Username: ");
+        String username = scanner.nextLine().trim();
+        System.out.print("Password: ");
+        String password = scanner.nextLine();
+
+        // Pass fullName into the registration method
+        if (userDao.registerUser(username, password, "RESIDENT", fullName)) {
+            System.out.println("Registration successful! You can now log in.");
+        } else {
+            System.out.println("Registration failed. Username may already exist.");
+        }
+    }
+
+    private void routeByRole(user currentUser) {
+        switch (currentUser.roles().toUpperCase()) {
+            case "ADMIN" -> new AdminMenu(currentUser).showMenu();
+            case "CAPTAIN" -> new BarangayCaptainMenu(currentUser).showMenu();
+            case "STAFF" -> new BarangayStaffMenu(currentUser).showMenu();
+            case "RESIDENT" -> new ResidentMenu(currentUser).showMenu();
+            default -> System.out.println("Unknown role assigned to user: " + currentUser.roles());
+        }
+    }
 }
